@@ -452,6 +452,23 @@ def resolve_requester(existing_rq, raw_title):
 
 # ─── SPONSOR NORMALIZATION ────────────────────────────────────────────────────
 
+def site_date(r):
+    """Date the site shows for a record (YYYY-MM-DD): Legistar's introduction date,
+    except for records Legistar re-entered two or more years after the year in their
+    file number. About 330 ordinances and resolutions from 2018 and 2019 were entered
+    years later (most in November 2023 and June-July 2025) with the entry day as
+    their introduction date; for those the earliest agenda or passed date that falls
+    in the file-number year is used. The CSV keeps Legistar's introduction date."""
+    intro = (r.get("intro_date") or "")[:10]
+    fn = r.get("file_number") or ""
+    if not (len(fn) == 9 and fn.isdigit() and intro[:4].isdigit()):
+        return intro
+    fy = fn[:4]
+    if int(intro[:4]) - int(fy) < 2:
+        return intro
+    dates = [d[:10] for d in (r.get("agenda_date"), r.get("passed_date")) if d and d[:4] == fy]
+    return min(dates) if dates else intro
+
 def normalize_requester(rq, date_str):
     if rq in ('Mayor', 'Mayor John Cranley', 'John Cranley', 'Mayor Aftab Pureval'):
         if date_str and date_str >= MAYOR_CUTOFF:
@@ -814,7 +831,8 @@ def build_json(csv_rows, legistar_links, vote_lookup=None, geo_by_address=None):
             vote_owner[r["matter_id"]] = fn
     out = []
     for r in csv_rows:
-        rq = normalize_requester(r.get('requester',''), r.get('intro_date',''))
+        date = site_date(r)
+        rq = normalize_requester(r.get('requester',''), date)
         fn = r["file_number"]
         # A scraped link is keyed by file number, so it is used only when the
         # file number is valid and belongs to this one row.
@@ -825,8 +843,8 @@ def build_json(csv_rows, legistar_links, vote_lookup=None, geo_by_address=None):
             "tp":          normalize_topics(r["topic_tags"]),
             "a":           r["action_type_ai"],
             "g":           geo_by_address.get(r["matter_id"]) or normalize_geography(r["geography"]),
-            "d":           r["intro_date"][:10],
-            "y":           r["intro_date"][:4],
+            "d":           date,
+            "y":           date[:4],
             "rq":          rq,
             "st":          r["status"],
             "sm":          r["summary"],

@@ -240,6 +240,7 @@ main{padding:1.5rem 0 3rem}
   </div>
 </main>
 
+<script src="search.js"></script>
 <script>
 const PAGE_SIZE = 20;
 let ALL = [];
@@ -422,11 +423,9 @@ function hasActiveFilters(f) {
 
 function applyFilters() {
   const f = getFilters();
+  const sq = SiteSearch.compile(f.q);
   filtered = ALL.filter(r => {
-    if (f.q) {
-      const hay = ((r.f || '') + ' ' + r.t + ' ' + r.sm).toLowerCase();
-      if (!hay.includes(f.q)) return false;
-    }
+    if (sq && !SiteSearch.test(sq, (r.f || '') + ' ' + r.t + ' ' + r.sm)) return false;
     if (f.topic && !(r.tp || '').split('|').includes(f.topic)) return false;
     if (f.action && r.mt !== f.action) return false;
     if (f.geo && !(r.g || '').split('|').includes(f.geo)) return false;
