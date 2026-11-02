@@ -2,6 +2,34 @@
 
 Notable changes to the Cincinnati City Council transparency site, most recent first. Each entry names the files touched and the live GitHub commit.
 
+## 2026-11-02 — Original dates for re-entered 2018-2019 records; word-by-word search; About page; bkkelly.com home page
+
+**Dates (`update_pipeline.py`).** Legistar holds about 330 ordinances and resolutions from 2018 and 2019 that were entered years later (209 on November 3-17, 2023, 116 on June 24-July 3, 2025, 6 in 2021) with the entry day as their introduction date; their agenda and passed dates are in the file-number year. The site showed them as 2023, 2025 and 2021 items. `site_date()` now gives the site date: Legistar's introduction date, except for records filed two or more years after the year in their file number, which take the earliest agenda or passed date in that year. The same date picks the Mayor shown for "Mayor" sponsors. The CSV keeps Legistar's introduction date. Tested on the full data: only `d` and `y` change, on 331 records. Data update [90618fb](https://github.com/BenKelly97/council/commit/90618fb5e7b9ec01ff9d80c75d7b19876baa0833) changed exactly those 331. The site's 2019 count goes from 391 to 721.
+
+**2019 count.** Legistar lists 405 matters introduced in 2019 against 1,598 to 1,780 in 2018, 2020 and 2021. It holds 743 matters with 2019 file numbers, while that year's numbers run past 201901800, and only 29 meetings for 2019. The remaining gap is in Legistar, not in the pipeline.
+
+**Search (`search.js` new, `index.html`, `agenda.html`).** The main list and the Meetings page searched for the whole query as one exact string, so "grant streetcar" found nothing and "short term rental" missed "short-term rental". Search now matches every word, in any order, at the start of a word; hyphens count as spaces and curly apostrophes as straight ones; a plural ending, and "-ion" on longer words, is dropped ("appropriation" also finds "appropriates": 67 to 674 items); text in double quotes is matched as a phrase. Tested in a browser on both pages. The Roll Call Votes page keeps its own synonym search.
+
+**About page (`about.html`).** States the dating rule above; votes start July 3, 2020 and Legistar has no earlier roll calls (it said June 2020 and that earlier roll calls were not read); no longer names the AI model as Haiku and mentions attachment text; lists the filing types with fixed-rule titles; explains the 2019 gap.
+
+Commit: [e7ef6ba](https://github.com/BenKelly97/council/commit/e7ef6ba0dc12861aaab73fc66fcf43ed7c1a18d9). Checked live: search results and About text.
+
+**Home page.** bkkelly.com showed only the repository README; `index.html` in BenKelly97/benkelly97.github.io ([6f46fc7](https://github.com/BenKelly97/benkelly97.github.io/commit/6f46fc7)) now links to the council site and its main pages.
+
+Files: `update_pipeline.py`, `search.js` (new), `index.html`, `agenda.html`, `about.html`, `council_data.json`; home-page repository `index.html` (new).
+
+## 2026-10-30 — Notices, memos and other filing types: AI wording for new items, hand wording for 46 old ones
+
+**Problem.** Notice, Memo, FYI Memo, Receipt, Request, Oath of Office, Resignation and Termination items also skipped the AI, so new ones showed the first 80 characters of the Legistar title and no description; 46 rows from 2018 and 2019 still did. Statements and successor filings that `filing_text()` cannot read (for example mayoral emergency declarations) would have done the same.
+
+**Change (`update_pipeline.py`, [a020c52](https://github.com/BenKelly97/council/commit/a020c52bab6c47e834fcfcd2076628738750d59b)).** Only Registration, Registration-Update, Statement and Successor items skip the AI, and only when `filing_text()` reads the Legistar title (`fixed_wording()`); every other item goes to the AI with the usual writing rules. The AI result is no longer forced to "financial statements" for statements.
+
+**Rows (`cincinnati_agenda_items_complete.csv`, [8b544ca](https://github.com/BenKelly97/council/commit/8b544ca)).** Hand wording for the 46 rows, for example "Notice of a special session on FC Cincinnati" and "Accept the resignation of City Manager Harry Black"; marked "[style rewrite]". Only titles, descriptions and notes changed.
+
+Data update [ab81479](https://github.com/BenKelly97/council/commit/ab81479da1040064bf76b7e152d1eef36d7e23b2): `council_data.json` matches the CSV for all 13,138 rows; no title is a cut-off Legistar title and no record has an empty description. A first attempt to commit both files together failed on GitHub's side ("Commit failed"); they were committed separately.
+
+Files: `update_pipeline.py`, `cincinnati_agenda_items_complete.csv`, `council_data.json`.
+
 ## 2026-10-29 — Fixed wording for registrations, disclosure statements and successor filings
 
 **Problem.** Registration, Registration-Update, Statement and Successor items are not sent to the AI. The pipeline gave them the first 80 characters of the Legistar title and no description ("REGISTRATION, submitted by the Clerk of Council from Legislative Agent Ozie Davi"): 149 registrations, 274 statements and 1 successor filing. Older ones had AI wording from an earlier run, 25 of them saying "lobbyist".
