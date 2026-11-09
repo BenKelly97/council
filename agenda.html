@@ -100,6 +100,9 @@ h1{font-size:20px;font-weight:600;letter-spacing:-0.01em;margin-bottom:0.25rem}
 .i-sub{grid-column:2;font-size:12px;color:var(--text3)}
 .i-sm{grid-column:2;font-size:13px;color:var(--text2);line-height:1.4}
 .i-raw{color:var(--text2)}
+.i-att{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:3px}
+.i-att a{font-size:12px;padding:3px 10px;border:1px solid var(--border2);border-radius:6px;color:var(--text);background:var(--bg2);text-decoration:none}
+.i-att a:hover{background:var(--bg3)}
 .more{margin-top:6px;background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0}
 .no-items{font-size:13px;color:var(--text3);margin-top:0.5rem}
 .foot{font-size:12px;color:var(--text3);margin-top:1.5rem}
@@ -149,6 +152,7 @@ const YEARS = {};          // year -> meetings, loaded on demand
 let YEAR_DATA = null;
 let ALL_YEARS = [];
 const SHOW_FIRST = 8;
+let ATT = null;            // attachment_links.json: matter id -> [[name, url]]
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -237,7 +241,24 @@ function itemHtml(it, past) {
   const sub = [it.mt, it.f ? 'File ' + it.f : '', past && it.action ? 'Action: ' + it.action : '',
     past ? voteText(it.votes) : '', it.on_site ? '' : 'Not on this site'].filter(Boolean).map(esc).join(' · ');
   const sm = it.sm ? `<span class="i-sm">${esc(it.sm)}</span>` : '';
-  return `<li><span class="i-n">${esc(it.n)}</span><span>${link}</span>${sm}<span class="i-sub">${sub}</span></li>`;
+  return `<li><span class="i-n">${esc(it.n)}</span><span>${link}</span>${sm}<span class="i-sub">${sub}</span>${attHtml(it)}</li>`;
+}
+// Download links for the item's attachments, from attachment_links.json (written by
+// the daily update; the files are on Legistar's server).
+function attHtml(it) {
+  const list = (ATT && it.id && (ATT.links || {})[it.id]) || [];
+  const links = list.map(([name, u]) => {
+    const href = String(u).startsWith('~') ? ATT.base + String(u).slice(1) : String(u);
+    return /^https:\/\//.test(href)
+      ? `<a href="${esc(href)}" target="_blank" rel="noopener">\u2193 ${esc(name)}</a>` : '';
+  }).join('');
+  return links ? `<span class="i-att">${links}</span>` : '';
+}
+function loadAttachmentLinks() {
+  fetch('attachment_links.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { if (!d) return; ATT = d; if (view === 'year' || DATA) render(); })
+    .catch(() => {});
 }
 function isCancelled(m) { return /cancel/i.test(m.comment || ''); }
 // A past meeting whose items have no action: the Clerk has not entered the results
@@ -367,6 +388,7 @@ async function load() {
 }
 load();
 loadIndex();
+loadAttachmentLinks();
 </script>
 </body>
 </html>
