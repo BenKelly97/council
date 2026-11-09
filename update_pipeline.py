@@ -41,6 +41,7 @@ import xml.etree.ElementTree as ET
 import anthropic
 from bs4 import BeautifulSoup
 import attachments as att
+import attachment_links as al
 from datetime import datetime, timedelta, timezone
 from collections import Counter, defaultdict
 
@@ -1428,6 +1429,11 @@ def main():
         write_agents(final_rows)
     except Exception as e:
         print(f"Could not build {AGENTS_FILE} ({e}); keeping the existing file.")
+    # Attachment links for the download buttons on index.html (attachment_links.py).
+    try:
+        print(f"Attachment links: {al.update_links(final_rows, API_BASE)}")
+    except Exception as e:
+        print(f"Attachment links skipped ({e}); keeping the existing file.")
 
 # ─── MEETINGS (agenda.json, agenda_YYYY.json) ─────────────────────────────────
 # Meetings are kept in one file per year from AGENDA_ARCHIVE_START_YEAR. A year
