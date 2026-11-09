@@ -2,6 +2,12 @@
 
 Notable changes to the Cincinnati City Council transparency site, most recent first. Each entry names the files touched and the live GitHub commit.
 
+## 2026-11-09 — bkkelly.com home page lists every council page
+
+The home page (`index.html` in BenKelly97/benkelly97.github.io, [9de9f14](https://github.com/BenKelly97/benkelly97.github.io/commit/9de9f149fe9e829f6c260a8416d65bdc51800d38)) now has one list of the public council pages, each with a one-line description: legislative record, Meetings, Roll call votes, Member records, Vote chart (not linked before), Legislative Agents, About. Not linked: `/draft/`, the admin page `review.html`, and the redirect pages.
+
+Files: home-page repository `index.html`.
+
 ## 2026-11-09 — Attachment download buttons (main list and Meetings page)
 
 An opened card on the main list now shows one button per Legistar attachment (for example "↓ Report"), next to "View on Legistar". Each button opens the file on Legistar's file server in a new tab.
