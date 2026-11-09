@@ -2,6 +2,16 @@
 
 Notable changes to the Cincinnati City Council transparency site, most recent first. Each entry names the files touched and the live GitHub commit.
 
+## 2026-11-09 — Attachment download buttons
+
+An opened card on the main list now shows one button per Legistar attachment (for example "↓ Report"), next to "View on Legistar". Each button opens the file on Legistar's file server in a new tab.
+
+Legistar's API refuses requests made from another site's page (checked from bkkelly.com), so the links are collected by the daily run. `attachment_links.py` (new) writes `attachment_links.json` (matter id to attachment names and file links); each run rechecks items introduced in the last 90 days every two days and backfills up to 2,500 unchecked items, newest first; a failed lookup is retried at the end of later backfills; the step stops after 25 failures in a row and keeps the existing file. `index.html` loads the file the first time a card is opened. Commits [b676285](https://github.com/BenKelly97/council/commit/b676285), [aa12546](https://github.com/BenKelly97/council/commit/aa12546) (workflow commits the new file).
+
+First run, data update [13a1095](https://github.com/BenKelly97/council/commit/13a1095ac855a2b24304130e813b7e73e6e38bb5): 2,779 items listed, 2,444 with attachments, no failures; file 395 KB; the run took 23 minutes instead of about 3. About 10,400 items remain for the backfill (about four more daily runs). Checked live on 202602991 (Keep Cincinnati Beautiful report). The buttons are on the main list only, not on the Meetings or Roll Call Votes pages.
+
+Files: `attachment_links.py` (new), `attachment_links.json` (new), `update_pipeline.py`, `index.html`, `.github/workflows/weekly_update.yml`.
+
 ## 2026-11-02 — Original dates for re-entered 2018-2019 records; word-by-word search; About page; bkkelly.com home page
 
 **Dates (`update_pipeline.py`).** Legistar holds about 330 ordinances and resolutions from 2018 and 2019 that were entered years later (209 on November 3-17, 2023, 116 on June 24-July 3, 2025, 6 in 2021) with the entry day as their introduction date; their agenda and passed dates are in the file-number year. The site showed them as 2023, 2025 and 2021 items. `site_date()` now gives the site date: Legistar's introduction date, except for records filed two or more years after the year in their file number, which take the earliest agenda or passed date in that year. The same date picks the Mayor shown for "Mayor" sponsors. The CSV keeps Legistar's introduction date. Tested on the full data: only `d` and `y` change, on 331 records. Data update [90618fb](https://github.com/BenKelly97/council/commit/90618fb5e7b9ec01ff9d80c75d7b19876baa0833) changed exactly those 331. The site's 2019 count goes from 391 to 721.
