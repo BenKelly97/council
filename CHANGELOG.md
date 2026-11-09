@@ -2,15 +2,17 @@
 
 Notable changes to the Cincinnati City Council transparency site, most recent first. Each entry names the files touched and the live GitHub commit.
 
-## 2026-11-09 — Attachment download buttons
+## 2026-11-09 — Attachment download buttons (main list and Meetings page)
 
 An opened card on the main list now shows one button per Legistar attachment (for example "↓ Report"), next to "View on Legistar". Each button opens the file on Legistar's file server in a new tab.
 
 Legistar's API refuses requests made from another site's page (checked from bkkelly.com), so the links are collected by the daily run. `attachment_links.py` (new) writes `attachment_links.json` (matter id to attachment names and file links); each run rechecks items introduced in the last 90 days every two days and backfills up to 2,500 unchecked items, newest first; a failed lookup is retried at the end of later backfills; the step stops after 25 failures in a row and keeps the existing file. `index.html` loads the file the first time a card is opened. Commits [b676285](https://github.com/BenKelly97/council/commit/b676285), [aa12546](https://github.com/BenKelly97/council/commit/aa12546) (workflow commits the new file).
 
-First run, data update [13a1095](https://github.com/BenKelly97/council/commit/13a1095ac855a2b24304130e813b7e73e6e38bb5): 2,779 items listed, 2,444 with attachments, no failures; file 395 KB; the run took 23 minutes instead of about 3. About 10,400 items remain for the backfill (about four more daily runs). Checked live on 202602991 (Keep Cincinnati Beautiful report). The buttons are on the main list only, not on the Meetings or Roll Call Votes pages.
+First run, data update [13a1095](https://github.com/BenKelly97/council/commit/13a1095ac855a2b24304130e813b7e73e6e38bb5): 2,779 items listed, 2,444 with attachments, no failures; file 395 KB; the run took 23 minutes instead of about 3. About 10,400 items remain for the backfill (about four more daily runs). Checked live on 202602991 (Keep Cincinnati Beautiful report).
 
-Files: `attachment_links.py` (new), `attachment_links.json` (new), `update_pipeline.py`, `index.html`, `.github/workflows/weekly_update.yml`.
+**Meetings page (`agenda.html`, [7dfcfaf](https://github.com/BenKelly97/council/commit/7dfcfaf6bdfce77b39507330953f812e95306ce2)).** Each agenda item with attachments shows the same download links under its description, on Upcoming, Recent and By year. The page loads `attachment_links.json` once after the meetings and redraws; without the file it shows the items as before. Tested in a browser: 16 links on Upcoming, 1,620 on By year 2026, none and no errors with the file missing. Items not yet reached by the backfill have no links. The Roll Call Votes page has no buttons.
+
+Files: `attachment_links.py` (new), `attachment_links.json` (new), `update_pipeline.py`, `index.html`, `agenda.html`, `.github/workflows/weekly_update.yml`.
 
 ## 2026-11-02 — Original dates for re-entered 2018-2019 records; word-by-word search; About page; bkkelly.com home page
 
