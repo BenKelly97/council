@@ -2,6 +2,21 @@
 
 Notable changes to the Cincinnati City Council transparency site, most recent first. Each entry names the files touched and the live GitHub commit.
 
+## 2026-11-10 — bkkelly.com/blog, copied from Medium
+
+New in the home-page repository BenKelly97/benkelly97.github.io. A daily workflow (`.github/workflows/blog.yml`, 12:23 UTC, also run by hand from the Actions tab) reads the Medium feed for medium.com/@bkellyohio and runs `.github/blog/build_blog.py`, which:
+
+- keeps every post in `.github/blog/posts.json` (Medium's feed lists only the latest 10, so posts stay on the site after they leave the feed; a post whose Medium update time changes is copied again);
+- reduces each post's HTML to a fixed list of tags, drops Medium's view-counter image, turns YouTube embeds into youtube-nocookie players and other embeds into a link to Medium;
+- copies images to `blog/images/` (a failed download keeps the Medium address and is retried next run);
+- writes `blog/index.html` and `blog/<slug>/index.html`, with a link to the Medium original and a canonical link to Medium.
+
+First run ([9db23ec](https://github.com/BenKelly97/benkelly97.github.io/commit/9db23ec738f842557dd6a05239ef62b4a91456ae)): 6 posts, 14 images. Text of each post matches Medium's word for word; the only dropped link is Medium's fallback link inside the YouTube embed. Checked live: all 6 pages and 14 images load, the video plays. Home page: Writing section with a link to the blog ([6cbb681](https://github.com/BenKelly97/benkelly97.github.io/commit/6cbb6818f4fdfddbcfe906f5345b9ade984667d2)).
+
+Commits: [24d8fbe](https://github.com/BenKelly97/benkelly97.github.io/commit/24d8fbe) workflow, [00978a0](https://github.com/BenKelly97/benkelly97.github.io/commit/00978a0) build script, [1516b59](https://github.com/BenKelly97/benkelly97.github.io/commit/1516b59) workflow saves posts.json. A test copy of the feed is at `.github/blog/feed.xml` (not served).
+
+Files (home-page repository): `.github/workflows/blog.yml`, `.github/blog/build_blog.py`, `.github/blog/posts.json`, `.github/blog/feed.xml`, `blog/` (new), `index.html`.
+
 ## 2026-11-09 — bkkelly.com home page lists every council page
 
 The home page (`index.html` in BenKelly97/benkelly97.github.io, [9de9f14](https://github.com/BenKelly97/benkelly97.github.io/commit/9de9f149fe9e829f6c260a8416d65bdc51800d38)) now has one list of the public council pages, each with a one-line description: legislative record, Meetings, Roll call votes, Member records, Vote chart (not linked before), Legislative Agents, About. Not linked: `/draft/`, the admin page `review.html`, and the redirect pages.
