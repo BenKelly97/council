@@ -2,6 +2,12 @@
 
 Notable changes to the Cincinnati City Council transparency site, most recent first. Each entry names the files touched and the live GitHub commit.
 
+## 2026-11-23 — Vote chart: filter to current members
+
+The Vote Alignment page (`votechart/index.html`, [7a6798d](https://github.com/BenKelly97/council/commit/7a6798d101718751bc6999f86a01abb20a7deca3)) has a "Show: All members / Current members" switch above the heatmap. Current members shows the nine members now on Council (the same list as `index.html` and `alternative.html`: Albi, Cramerding, James, Jeffreys, Johnson, Kearney, Nolan, Owens, Walsh); All members also shows Harris, Keating, Landsman and Parks. The heatmap, the table view (36 pairs instead of 68) and the color scale are redrawn for the members shown; each pair's agreement figure is unchanged. A selected pair stays open when both members remain shown and closes otherwise. The address `votechart/?members=current` opens the filtered view. Tested in a browser at desktop and phone width. When Council membership changes, update the list in this page with the other two.
+
+Files: `votechart/index.html`.
+
 ## 2026-11-10 — bkkelly.com/blog, copied from Medium
 
 New in the home-page repository BenKelly97/benkelly97.github.io. A daily workflow (`.github/workflows/blog.yml`, 12:23 UTC, also run by hand from the Actions tab) reads the Medium feed for medium.com/@bkellyohio and runs `.github/blog/build_blog.py`, which:
