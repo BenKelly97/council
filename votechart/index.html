@@ -87,13 +87,17 @@ main{padding:2rem 0 3rem}
 .legend-ends{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text3);width:100%;order:3;margin-top:-4px}
 .legend-swatch{width:12px;height:12px;border:1px solid var(--border);background:var(--null-fill);flex:none;display:inline-block;vertical-align:middle;margin-right:5px}
 
-.toggle-row{display:flex;justify-content:flex-end;margin-bottom:10px}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.member-filter{display:flex;align-items:center;gap:0}
+.member-filter .filter-label{font-size:12.5px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-right:8px}
+.member-filter .toggle-btn + .toggle-btn{border-left:none}
+.member-filter .toggle-btn[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
 .toggle-btn{font:inherit;font-size:13px;background:var(--card-bg);color:var(--text);border:1px solid var(--border);padding:7px 12px;cursor:pointer}
 .toggle-btn:hover{background:var(--card-bg-hover)}
 .toggle-btn:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 
 .matrix-scroll{overflow-x:auto;border:1px solid var(--border);background:var(--card-bg)}
-table.matrix{border-collapse:separate;border-spacing:0;font-size:12.5px;table-layout:fixed;width:626px}
+table.matrix{border-collapse:separate;border-spacing:0;font-size:12.5px;table-layout:fixed;width:calc(132px + var(--n,13) * 38px)}
 table.matrix th, table.matrix td{padding:0;text-align:center;overflow:visible}
 .corner{position:sticky;left:0;top:0;z-index:3;background:var(--card-bg);width:132px}
 th.colhead{position:sticky;top:0;z-index:2;background:var(--card-bg);height:132px;width:38px;vertical-align:bottom;padding-bottom:6px;border-bottom:1px solid var(--border);overflow:visible}
@@ -170,7 +174,7 @@ tr.datarow{cursor:pointer}
 @media(max-width:640px){
 .wordmark{font-size:20px}
 .topnav{display:none}
-table.matrix{width:520px}
+table.matrix{width:calc(104px + var(--n,13) * 32px)}
 th.colhead{height:110px;width:32px}
 th.colhead span{left:16px}
 td.cell{width:32px}
@@ -226,6 +230,11 @@ td.cell{width:32px}
 </div>
 
 <div class="toggle-row">
+<div class="member-filter" role="group" aria-label="Members shown">
+<span class="filter-label">Show</span>
+<button class="toggle-btn" id="showAllBtn" aria-pressed="true">All members</button>
+<button class="toggle-btn" id="showCurrentBtn" aria-pressed="false">Current members</button>
+</div>
 <button class="toggle-btn" id="toggleBtn" aria-pressed="false">View as table</button>
 </div>
 
@@ -391,8 +400,20 @@ td.cell{width:32px}
     return L > 0.42 ? '#0b0b0b' : '#ffffff';
   }
 
+  // Rows and columns shown in the heatmap and the table. The agreement figures
+  // come from the full grid; filtering only chooses which members appear.
+  var MEMBER_INDEX = {};
+  members.forEach(function(m, i){ MEMBER_INDEX[m] = i; });
+  function cellFor(a, b){ return grid[MEMBER_INDEX[a]][MEMBER_INDEX[b]]; }
+
   var minRate = 100, maxRate = 0;
-  grid.forEach(function(row){ row.forEach(function(c){ if (c){ minRate=Math.min(minRate,c[0]); maxRate=Math.max(maxRate,c[0]); } }); });
+  function setScale(names){
+    minRate = 100; maxRate = 0;
+    names.forEach(function(a){ names.forEach(function(b){
+      var c = a === b ? null : cellFor(a, b);
+      if (c){ minRate = Math.min(minRate, c[0]); maxRate = Math.max(maxRate, c[0]); }
+    }); });
+  }
 
   function fillFor(rate){
     var t = (rate - minRate) / (maxRate - minRate || 1);
@@ -400,77 +421,82 @@ td.cell{width:32px}
   }
 
   var table = document.getElementById('matrixTable');
-  var thead = document.createElement('thead');
-  var headRow = document.createElement('tr');
-  var corner = document.createElement('th');
-  corner.className = 'corner';
-  corner.setAttribute('scope','col');
-  headRow.appendChild(corner);
-  members.forEach(function(m, mi){
-    var th = document.createElement('th');
-    th.className = 'colhead';
-    th.setAttribute('scope','col');
-    th.style.zIndex = String(members.length - mi + 2);
-    var span = document.createElement('span');
-    span.textContent = m;
-    th.appendChild(span);
-    headRow.appendChild(th);
-  });
-  thead.appendChild(headRow);
-  table.appendChild(thead);
 
-  var tbody = document.createElement('tbody');
-  members.forEach(function(rowName, ri){
-    var tr = document.createElement('tr');
-    var rh = document.createElement('th');
-    rh.className = 'rowhead';
-    rh.setAttribute('scope','row');
-    rh.textContent = rowName;
-    tr.appendChild(rh);
-    members.forEach(function(colName, ci){
-      var td = document.createElement('td');
-      td.className = 'cell';
-      var cellData = grid[ri][ci];
-      if (ri === ci){
-        td.classList.add('self');
-        td.setAttribute('aria-label', rowName + ': same member');
-      } else if (!cellData){
-        td.classList.add('null');
-        td.tabIndex = 0;
-        td.setAttribute('aria-label', rowName + ' and ' + colName + ': no shared contested votes');
-        td.addEventListener('pointerenter', function(e){ showTip(e, rowName, colName, null); });
-        td.addEventListener('focus', function(e){ showTip(e, rowName, colName, null); });
-        td.addEventListener('pointermove', moveTip);
-        td.addEventListener('pointerleave', hideTip);
-        td.addEventListener('blur', hideTip);
-        td.addEventListener('click', function(){ selectPair(rowName, colName, td); });
-        td.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); selectPair(rowName, colName, td); } });
-      } else {
-        var rate = cellData[0], agree = cellData[1], total = cellData[2];
-        var hex = fillFor(rate);
-        td.classList.add('hot');
-        td.style.background = hex;
-        td.tabIndex = 0;
-        if (total < 15) td.classList.add('lowsample');
-        var val = document.createElement('span');
-        val.className = 'cellval';
-        val.style.color = textColorFor(hex);
-        val.textContent = Math.round(rate);
-        td.appendChild(val);
-        td.setAttribute('aria-label', rowName + ' and ' + colName + ': ' + rate.toFixed(1) + '% agreement, ' + agree + ' of ' + total + ' shared contested votes');
-        td.addEventListener('pointerenter', function(e){ showTip(e, rowName, colName, cellData); });
-        td.addEventListener('focus', function(e){ showTip(e, rowName, colName, cellData); });
-        td.addEventListener('pointermove', moveTip);
-        td.addEventListener('pointerleave', hideTip);
-        td.addEventListener('blur', hideTip);
-        td.addEventListener('click', function(){ selectPair(rowName, colName, td); });
-        td.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); selectPair(rowName, colName, td); } });
-      }
-      tr.appendChild(td);
+  function addCellEvents(td, rowName, colName, cellData){
+    td.tabIndex = 0;
+    td.addEventListener('pointerenter', function(e){ showTip(e, rowName, colName, cellData); });
+    td.addEventListener('focus', function(e){ showTip(e, rowName, colName, cellData); });
+    td.addEventListener('pointermove', moveTip);
+    td.addEventListener('pointerleave', hideTip);
+    td.addEventListener('blur', hideTip);
+    td.addEventListener('click', function(){ selectPair(rowName, colName, td); });
+    td.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); selectPair(rowName, colName, td); } });
+  }
+
+  function renderMatrix(names){
+    table.textContent = '';
+    table.style.setProperty('--n', String(names.length));
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    var corner = document.createElement('th');
+    corner.className = 'corner';
+    corner.setAttribute('scope','col');
+    headRow.appendChild(corner);
+    names.forEach(function(m, mi){
+      var th = document.createElement('th');
+      th.className = 'colhead';
+      th.setAttribute('scope','col');
+      th.style.zIndex = String(names.length - mi + 2);
+      var span = document.createElement('span');
+      span.textContent = m;
+      th.appendChild(span);
+      headRow.appendChild(th);
     });
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    names.forEach(function(rowName){
+      var tr = document.createElement('tr');
+      var rh = document.createElement('th');
+      rh.className = 'rowhead';
+      rh.setAttribute('scope','row');
+      rh.textContent = rowName;
+      tr.appendChild(rh);
+      names.forEach(function(colName){
+        var td = document.createElement('td');
+        td.className = 'cell';
+        td.dataset.a = rowName;
+        td.dataset.b = colName;
+        if (rowName === colName){
+          td.classList.add('self');
+          td.setAttribute('aria-label', rowName + ': same member');
+        } else {
+          var cellData = cellFor(rowName, colName);
+          if (!cellData){
+            td.classList.add('null');
+            td.setAttribute('aria-label', rowName + ' and ' + colName + ': no shared contested votes');
+          } else {
+            var rate = cellData[0], agree = cellData[1], total = cellData[2];
+            var hex = fillFor(rate);
+            td.classList.add('hot');
+            td.style.background = hex;
+            if (total < 15) td.classList.add('lowsample');
+            var val = document.createElement('span');
+            val.className = 'cellval';
+            val.style.color = textColorFor(hex);
+            val.textContent = Math.round(rate);
+            td.appendChild(val);
+            td.setAttribute('aria-label', rowName + ' and ' + colName + ': ' + rate.toFixed(1) + '% agreement, ' + agree + ' of ' + total + ' shared contested votes');
+          }
+          addCellEvents(td, rowName, colName, cellData);
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+  }
 
   var tooltip = document.getElementById('tooltip');
   function showTip(e, a, b, cellData){
@@ -518,28 +544,31 @@ td.cell{width:32px}
   }
   function hideTip(){ tooltip.classList.remove('show'); }
 
-  var rows = [];
-  for (var i=0;i<members.length;i++){
-    for (var j=i+1;j<members.length;j++){
-      var c = grid[i][j];
-      if (c) rows.push({a:members[i], b:members[j], rate:c[0], agree:c[1], total:c[2]});
-    }
-  }
-  rows.sort(function(x,y){ return y.rate - x.rate; });
   var tbodyEl = document.getElementById('dataTableBody');
-  rows.forEach(function(r){
-    var tr = document.createElement('tr');
-    tr.className = 'datarow';
-    tr.tabIndex = 0;
-    var tdA = document.createElement('td'); tdA.textContent = r.a;
-    var tdB = document.createElement('td'); tdB.textContent = r.b;
-    var tdRate = document.createElement('td'); tdRate.className='num'; tdRate.textContent = r.rate.toFixed(1) + '%';
-    var tdN = document.createElement('td'); tdN.className='num'; tdN.textContent = r.agree + ' / ' + r.total;
-    tr.appendChild(tdA); tr.appendChild(tdB); tr.appendChild(tdRate); tr.appendChild(tdN);
-    tr.addEventListener('click', function(){ selectPair(r.a, r.b, null); });
-    tr.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); selectPair(r.a, r.b, null); } });
-    tbodyEl.appendChild(tr);
-  });
+  function renderTable(names){
+    tbodyEl.textContent = '';
+    var rows = [];
+    for (var i=0;i<names.length;i++){
+      for (var j=i+1;j<names.length;j++){
+        var c = cellFor(names[i], names[j]);
+        if (c) rows.push({a:names[i], b:names[j], rate:c[0], agree:c[1], total:c[2]});
+      }
+    }
+    rows.sort(function(x,y){ return y.rate - x.rate; });
+    rows.forEach(function(r){
+      var tr = document.createElement('tr');
+      tr.className = 'datarow';
+      tr.tabIndex = 0;
+      var tdA = document.createElement('td'); tdA.textContent = r.a;
+      var tdB = document.createElement('td'); tdB.textContent = r.b;
+      var tdRate = document.createElement('td'); tdRate.className='num'; tdRate.textContent = r.rate.toFixed(1) + '%';
+      var tdN = document.createElement('td'); tdN.className='num'; tdN.textContent = r.agree + ' / ' + r.total;
+      tr.appendChild(tdA); tr.appendChild(tdB); tr.appendChild(tdRate); tr.appendChild(tdN);
+      tr.addEventListener('click', function(){ selectPair(r.a, r.b, null); });
+      tr.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); selectPair(r.a, r.b, null); } });
+      tbodyEl.appendChild(tr);
+    });
+  }
 
   function fmtDate(d){
     if (!d) return '';
@@ -759,9 +788,12 @@ td.cell{width:32px}
   var detailClose = document.getElementById('detailClose');
   var selectedCellEl = null;
 
+  var selectedPair = null;
+
   function selectPair(a, b, cellEl){
     if (selectedCellEl) selectedCellEl.classList.remove('selected');
     selectedCellEl = cellEl;
+    selectedPair = [a, b];
     if (selectedCellEl) selectedCellEl.classList.add('selected');
 
     var matches = CONTESTED.filter(function(rec){
@@ -812,7 +844,46 @@ td.cell{width:32px}
     detailPanel.hidden = true;
     if (selectedCellEl) selectedCellEl.classList.remove('selected');
     selectedCellEl = null;
+    selectedPair = null;
   });
+
+  // Member filter: all members since 2022, or only members now on Council.
+  // Keep this list the same as CURRENT_MEMBERS in index.html and alternative.html.
+  var CURRENT_MEMBERS = ['Anna Albi','Jeff Cramerding','Ryan James','Mark Jeffreys','Scotty Johnson',
+    'Jan-Michele Kearney','Evan Nolan','Meeka Owens','Seth Walsh'];
+  var showAllBtn = document.getElementById('showAllBtn');
+  var showCurrentBtn = document.getElementById('showCurrentBtn');
+
+  function renderView(currentOnly){
+    var names = currentOnly ? members.filter(function(m){ return CURRENT_MEMBERS.indexOf(m) !== -1; }) : members;
+    setScale(names);
+    renderMatrix(names);
+    renderTable(names);
+    showAllBtn.setAttribute('aria-pressed', String(!currentOnly));
+    showCurrentBtn.setAttribute('aria-pressed', String(currentOnly));
+    hideTip();
+    if (selectedPair){
+      if (names.indexOf(selectedPair[0]) === -1 || names.indexOf(selectedPair[1]) === -1){
+        detailPanel.hidden = true;
+        selectedPair = null;
+        selectedCellEl = null;
+      } else {
+        selectedCellEl = table.querySelector('td.cell[data-a="' + selectedPair[0] + '"][data-b="' + selectedPair[1] + '"]');
+        if (selectedCellEl) selectedCellEl.classList.add('selected');
+      }
+    }
+    try {
+      var url = new URL(window.location.href);
+      if (currentOnly) url.searchParams.set('members', 'current'); else url.searchParams.delete('members');
+      window.history.replaceState(null, '', url.toString());
+    } catch (e) {}
+  }
+  showAllBtn.addEventListener('click', function(){ renderView(false); });
+  showCurrentBtn.addEventListener('click', function(){ renderView(true); });
+
+  var startCurrent = false;
+  try { startCurrent = new URLSearchParams(window.location.search).get('members') === 'current'; } catch (e) {}
+  renderView(startCurrent);
 
   var btn = document.getElementById('toggleBtn');
   var matrixWrap = document.getElementById('matrixWrap');
